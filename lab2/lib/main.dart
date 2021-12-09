@@ -4,8 +4,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:lab2/widgets/application.dart';
-import 'package:lab2/widgets/credit_card/credit_card.dart';
-import 'package:lab2/widgets/credit_card_form.dart';
 
 void main() => runApp(const MyApp());
 
@@ -19,10 +17,15 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         textTheme: const TextTheme(
             headline2: TextStyle(
-                color: Colors.grey,
+                color: Colors.white70,
                 fontSize: 12,
                 fontWeight: FontWeight.normal),
-            subtitle2: TextStyle(color: Colors.white, fontSize: 15)),
+            subtitle2: TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              fontFamily: "Courier",
+            )),
       ),
       home: Scaffold(
         appBar: AppBar(

@@ -1,7 +1,28 @@
+enum CardCompany {
+  visa,
+  amex,
+}
+
 class Const {
   static const double cardPadding = 15;
+  static const String tempCardNumber = "####  ####  ####  ####";
+  static const String tempCardName = "";
+  static const String tempCardMonth = "01";
+  static const String tempCardYear = "2021";
+  static const String tempCardCvv = "";
+
+  static const Map cardCompanies = {
+    "visa": "^4",
+    "amex": "^34|37",
+    "unionpay": "^62",
+    "discover": "^6",
+    "dinersclub": "^30|36|38",
+    "mastercard": "^5",
+    "troy": "^9792",
+    "jcb": "^3"
+  };
+
   static const List<String> expirationDate = [
-    "Month",
     "01",
     "02",
     "03",
@@ -16,7 +37,6 @@ class Const {
     "12"
   ];
   static const List<String> expirationYear = [
-    "Year",
     "2021",
     "2022",
     "2023",

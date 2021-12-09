@@ -1,10 +1,59 @@
+import 'package:flip_card/flip_card_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../constants.dart';
+import 'application.dart';
 import 'dropdown.dart';
 
+//Using the credit card number formatter implemented in:
+//https://medium.com/flutter-community/
+//validating-and-formatting-payment-card-text-fields-in-flutter-bebe12bc9c60
+//----------------------------------------------------------------------------
+class CardNumberInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+      TextEditingValue oldValue, TextEditingValue newValue) {
+    var text = newValue.text;
+
+    if (newValue.selection.baseOffset == 0) {
+      return newValue;
+    }
+
+    var buffer = StringBuffer();
+    for (int i = 0; i < text.length; i++) {
+      buffer.write(text[i]);
+      var nonZeroIndex = i + 1;
+      if (nonZeroIndex % 4 == 0 && nonZeroIndex != text.length) {
+        buffer.write('  '); // Add double spaces.
+      }
+    }
+
+    var string = buffer.toString();
+    return newValue.copyWith(
+        text: string,
+        selection: TextSelection.collapsed(offset: string.length));
+  }
+}
+//----------------------------------------------------------------------------
+
 class CreditCardForm extends StatefulWidget {
-  const CreditCardForm({Key? key}) : super(key: key);
+  final TextEditingController cardNumberController;
+  final TextEditingController cardNameController;
+  final TextEditingController cardCvvController;
+  final DropDownController cardMonthController;
+  final DropDownController cardYearController;
+  final FlipCardController cardFlipController;
+
+  const CreditCardForm(
+      {Key? key,
+      required this.cardNumberController,
+      required this.cardNameController,
+      required this.cardMonthController,
+      required this.cardYearController,
+      required this.cardCvvController,
+      required this.cardFlipController})
+      : super(key: key);
 
   @override
   CreditCardFormState createState() {
@@ -13,16 +62,22 @@ class CreditCardForm extends StatefulWidget {
 }
 
 class CreditCardFormState extends State<CreditCardForm> {
-  // Create a global key that uniquely identifies the Form widget
-  // and allows validation of the form.
-  //
-  // Note: This is a `GlobalKey<FormState>`,
-  // not a GlobalKey<MyCustomFormState>.
   final _formKey = GlobalKey<FormState>();
 
   @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    widget.cardNumberController.dispose();
+    widget.cardNameController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Build a Form widget using the _formKey created above.
     return Container(
       height: 410,
       decoration: BoxDecoration(
@@ -33,7 +88,6 @@ class CreditCardFormState extends State<CreditCardForm> {
             color: Colors.black.withOpacity(0.1),
             spreadRadius: 15,
             blurRadius: 5,
-            //offset: Offset(0, 3), // changes position of shadow
           ),
         ],
       ),
@@ -45,10 +99,15 @@ class CreditCardFormState extends State<CreditCardForm> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             const SizedBox(height: 120),
-
             const Text("Card Number"),
             const SizedBox(height: 5),
             TextFormField(
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(16),
+                CardNumberInputFormatter()
+              ],
+              controller: widget.cardNumberController,
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
               ),
@@ -56,13 +115,17 @@ class CreditCardFormState extends State<CreditCardForm> {
             const SizedBox(height: 20),
             const Text("Card Name"),
             const SizedBox(height: 5),
-            const TextField(
-              decoration: InputDecoration(
+            TextFormField(
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp("[a-zA-Zåäö ]")),
+                LengthLimitingTextInputFormatter(18)
+              ],
+              controller: widget.cardNameController,
+              decoration: const InputDecoration(
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 20),
-
             Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -71,36 +134,51 @@ class CreditCardFormState extends State<CreditCardForm> {
                     child: Column(
                         mainAxisAlignment: MainAxisAlignment.start,
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const <Widget>[
-                          Text("Expiration Date"),
-                          SizedBox(
+                        children: <Widget>[
+                          const Text("Expiration Date"),
+                          const SizedBox(
                             height: 5,
                           ),
-                          CustomDropdown(items: Const.expirationDate),
+                          CustomDropdown(
+                            items: Const.expirationDate,
+                            dropDownController: widget.cardMonthController,
+                          ),
                         ]),
                   ),
                   const SizedBox(width: 10),
-                  const Expanded(
-                    child: CustomDropdown(items: Const.expirationYear),
+                  Expanded(
+                    child: CustomDropdown(
+                      items: Const.expirationYear,
+                      dropDownController: widget.cardYearController,
+                    ),
                   ),
                   const SizedBox(width: 30),
                   Expanded(
                       child: Column(
                           mainAxisAlignment: MainAxisAlignment.start,
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const <Widget>[
-                        Text("CVV"),
-                        SizedBox(
+                          children: <Widget>[
+                        const Text("CVV"),
+                        const SizedBox(
                           height: 5,
                         ),
-                        TextField(
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(),
+                        Focus(
+                          onFocusChange: (hasFocus) {
+                            widget.cardFlipController.toggleCard();
+                          },
+                          child: TextFormField(
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                              LengthLimitingTextInputFormatter(4)
+                            ],
+                            controller: widget.cardCvvController,
+                            decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                            ),
                           ),
                         ),
                       ])),
                 ]),
-            // Add TextFormFields and ElevatedButton here.
           ],
         ),
       ),
